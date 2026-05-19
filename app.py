@@ -1,135 +1,148 @@
 import streamlit as st
 import numpy as np
-
 import pandas as pd
+import io
+import matplotlib.pyplot as plt
+import seaborn as sns
+#from io import StringIO
 
-from datetime import datetime  
-
-
-
- 
-#st.sidebar.selectbox("Hola") 
 st.sidebar.image("Imagen.jpg", width=100)
 
-st.title("TRABAJO PRACTICO  ") 
+st.title("Especialización en Python  for Analytics ") 
 opcionHome = st.sidebar.selectbox(
     "",
-    [ "Home","Ejercicio 1", "Ejercicio 2",
-     "Ejercicio 3","Ejercicio 4"]
-)             # Importa 'datetime' para obtener fecha y hora actual y registrar movimientos.
+    [ "Home","Modulo 1", "Modulo 2"]
+)          
 
-if opcionHome=="Home": 
-    
+if opcionHome=="Modulo 1":
+    st.subheader("Trabajo Practico 2 de la Especialización en Python  for Analytics") 
     st.write("Crysbel Anccasi Ramos") 
-    st.write("Módulo 1 - Python Fundamentals") 
+    st.write("Módulo 2 - Especialización en Python  for Analytics") 
     st.write("2026") 
-    st.write("Trabajo practico del curso en donde se pone practica lo aprendido en el primer Modulo de curso de Python") 
-    st.write("Teconologìas usadas: Steamlit,NumPy, arrays y DataFrame ") 
+    st.write("Trabajo practico del curso de Especializacion en Python for Analytics, en donde se pone practica lo aprendido en el 2º Modulo") 
+    st.write("Teconologìas usadas: Steamlit,NumPy,Pandas , matplotlib,seaborn y DataFrame ") 
 
-if opcionHome=="Ejercicio 1":  
-    st.title("💵 Movimientos Bancarios") 
+if opcionHome=="Modulo 2":
+    archivo=st.file_uploader("BankMarketing.csv",type=["csv"]) 
 
-    class Movimiento:                               # Define una clase 'Cuenta' (POO) que modela una cuenta bancaria con saldo.
-        def __init__(self, Ingreso, saldo=0):   # Método constructor: se ejecuta al crear una instancia; recibe titular y saldo inicial.
-            self.titular, self.saldo = Ingreso, saldo  # Asigna a la instancia (self) el nombre del titular y el saldo actual.
-        def ingresar(self, m): self.saldo += m        # Método de negocio: suma 'm' al saldo; NO valida negativo (se controla en la UI).
-        def gastar(self, m):                          # Método de negocio: intenta retirar 'm' del saldo actual.
-            if m <= self.saldo: self.saldo -= m  
+    if archivo is not None   :
+
+        st.write("Archivo cargado") 
+        df=pd.read_csv(archivo)
 
 
-
+        st.subheader("Vista previa")
+        st.write(df.head())
         
-    c = st.session_state.setdefault("c", Movimiento("Ingreso", 100)) 
+        st.write("Nº de columnas y columnas") 
+        st.write(df.shape)
+        
+        st.subheader("Item 1: Información general del dataset")  
+        buffer = io.StringIO()
+        df.info(buf=buffer)
+        info = buffer.getvalue()
 
-    h = st.session_state.setdefault("h", [])                     # En 'h' guardamos el historial: si no existe, crea una lista vacía.
+        st.text(info)
+        st.write("Tipos de datos") 
+        st.write(df.dtypes)
 
-    m = st.number_input("Monto", 0, 1000, 100)   
+        st.write("Conteo de valores nulos") 
+        st.write(df.isnull().sum())
 
-    i = st.session_state.setdefault("i",[])  
-    g = st.session_state.setdefault("g", [])  
+        st.subheader("Item 2: Clasifiaciòn de variables")  
+        df["TotalCharges"] = pd.to_numeric(
+            df["TotalCharges"],
+            errors="coerce"
+        ) 
+        st.write("Datos Categoricos")  
+        st.dataframe(df.select_dtypes(include="object"))
 
-    opcion = st.selectbox(
-        "Tipo movimiento:",
-        ["Tipo Movimiento","Ingresar", "Gastar"]
-    )
+        st.write("Datos Numericos")  
+        
+        st.dataframe(df.select_dtypes(include="number"))
+        
+        st.write("Funcion Personalizada")
+        def  prom_TotalCharges():
+
+            prom_TotalCharges=df["TotalCharges"].mean()
+
+            return prom_TotalCharges
+        st.write("Promedio TotalCharges : " ,prom_TotalCharges())
+
+        st.write("Mostrar resultados con conteo de Contract")
+        conteo=df["Contract"].value_counts()
+        conteo
+
+        st.subheader("Item 3: Estadísticas descriptivas ")  
+        resumen=df.describe()
+        resumen
+        st.write("Interpretación básica de medias, medianas y dispersión ")
+        st.write("La media de Senior Citizen es: ", df["SeniorCitizen"].mean())
+        st.write("La mediana de Senior Citizen es: ", df["SeniorCitizen"].median())
+        st.write("La desviacion estandar de Senior Citizen es: ", df["SeniorCitizen"].std())
+
+        st.subheader("Ítem 4: Análisis de valores faltantes ")  
+        nulos=df.isnull().sum()
+        st.write("Solo TotalCharges tiene valores nulos, estos son ",nulos[nulos > 0])
+
+        st.subheader("Ítem 5:Distribución de variables numéricas ")
+
+        variable = df.select_dtypes(include=np.number)
+        variable.hist(
+                figsize=(12,6),
+                bins=30
+        )
+
+        st.pyplot()
+
+        st.subheader("Ítem 6:Análisis de variables categóricas (Partner) ")
+        
+        plt.figure(figsize=(10,5))
+
+        categ=df.select_dtypes(include="object" )
+        conteo = categ["Partner"].value_counts()
+
+        fig, ax = plt.subplots(figsize=(12,6))
+
+        ax.bar(
+            conteo.index,
+            conteo.values
+        )
+
+        st.pyplot(fig)
+
+        st.subheader("Ítem 7: Análisis bivariado (numérico vs categórico)") 
+
+        bivariado = df[["Partner","tenure"]]
+        fig, ax = plt.subplots(figsize=(10,5))
+        sns.boxplot(
+            x="Partner",
+            y="tenure",
+            data=df,
+            ax=ax
+        )
+
+        plt.title("Tenure por Partner")
+        st.pyplot(fig)
+
+        st.subheader("Ítem 7: Análisis bivariado (categórico vs categórico)") 
+
+        bivariado = df[["Partner","InternetService"]]
+        fig, ax = plt.subplots(figsize=(10,5))
+        sns.boxplot(
+            x="Partner",
+            y="InternetService",
+            data=df,
+            ax=ax
+        )
+
+        plt.title("Partner vs InternetService")
+        st.pyplot(fig)
 
 
-    if opcion=="Ingresar":                                   
-        c.ingresar(m)                                           
-        h.append(f"{datetime.now():%Y-%m-%d %H:%M:%S} · Ingreso · ${m} ")  
-        i.append(f"{datetime.now():%Y-%m-%d %H:%M:%S} · Ingreso · ${m} ")
-                                                                
-    if opcion=="Gastar":                                    
-        saldo_prev = c.saldo                                    
-        c.gastar(m)                                             
-        if c.saldo < saldo_prev:                                 
-            h.append(f"{datetime.now():%Y-%m-%d %H:%M:%S} · Gasto   · ${m} ")  
-            g.append(f"{datetime.now():%Y-%m-%d %H:%M:%S} · Gasto · ${m} ")                                                 
-        else:                                                   
-            st.warning("Fondos insuficientes.")   
 
 
 
-    st.write(f" {c.titular} — Saldo: ${c.saldo}") 
 
 
-    st.subheader(" Historial")                                  # Subtítulo para la sección de historial.
-    st.text("\n".join(reversed(h)) if h else "Aún sin movimientos.") 
 
-    st.subheader("Ingresos")  
-    st.text("\n".join(reversed(i)) if h else "No hay ingreso") 
-
-    st.subheader(" Gastos")  
-    st.text("\n".join(reversed(g)) if h else "No hay gastos") 
-
-    st.subheader("Saldo Final")  
-    st.write(c.saldo)
-
-    st.subheader("Flujo de caja") 
-    if c.saldo>0:
-        st.write("A favor")
-    else:
-        st.write("En contra")
-
-
-if opcionHome=="Ejercicio 2":
-    class Producto:
-        def __init__(self, nombre_producto, precio):
-            self.nombre_producto = nombre_producto
-            self.precio = precio
-
-    class Venta(Producto):
-        def __init__(self, nombre_producto, precio):
-            super().__init__(nombre_producto, precio)
-            self.cantidad = 0
-
-        def agregar_cantidad(self, cantidad):
-            #self.cantidad.append(cantidad)
-            self.cantidad=cantidad
-        def total(self):
-            return sum(self.cantidad)/len(self.precio) if self.cantidad else 0
-
-    # ==== Interfaz Streamlit ====
-    nombre_prod = st.text_input("Nombre del producto")
-    precio = st.number_input("Precio", 0.0, 1000.0)
-
-    if "ventas" not in st.session_state:
-        st.session_state.ventas = []
-
-    if st.button("Registrar producto"):
-        prod = Venta(nombre_prod, precio)
-        st.session_state.ventas.append(prod)
-        st.success(f"✅ Producto {nombre_prod} registrado correctamente.")
-
-    st.subheader("📚 Agregar Venta")
-    if st.session_state.ventas:
-        seleccionado = st.selectbox("Selecciona producto", [e.nombre_producto for e in st.session_state.ventas])
-        cantidad = st.number_input("Cantidad", min_value=1, max_value=1000)
-        if st.button("Agregar venta"):
-            for e in st.session_state.ventas:
-                if e.nombre_producto == seleccionado:
-                    e.agregar_cantidad(cantidad)
-                    st.success(f"Venta de {cantidad}unidades registrada del producto  {e.nombre_producto}")
-
-        dataVentas = [{"Producto": e.nombre_producto, "Precio": e.precio,"Cantidad":e.cantidad,"Total": e.precio*e.cantidad} for e in st.session_state.ventas]
-        st.dataframe(pd.DataFrame(dataVentas))
